@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Terminal, Activity, GitBranch, Search, Shield, Cpu } from "lucide-react";
 import { loadingSteps } from "../data/mockData";
@@ -7,32 +7,59 @@ export default function LoadingScreen({ repoUrl, onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [progress, setProgress] = useState(0);
+  const timersRef = useRef([]);
 
   useEffect(() => {
+    const clearTimers = () => {
+      timersRef.current.forEach((timer) => clearTimeout(timer));
+      timersRef.current = [];
+    };
+
+    if (!loadingSteps.length) {
+      setProgress(100);
+      const completionTimer = window.setTimeout(() => onComplete?.(), 600);
+      timersRef.current.push(completionTimer);
+      return clearTimers;
+    }
+
     let stepIndex = 0;
-    let totalDuration = loadingSteps.reduce((a, s) => a + s.duration, 0);
+    const totalDuration = loadingSteps.reduce((total, step) => total + step.duration, 0);
     let elapsed = 0;
+    let isActive = true;
 
     const runStep = () => {
+      if (!isActive) return;
+
       if (stepIndex >= loadingSteps.length) {
         setProgress(100);
-        setTimeout(() => onComplete(), 600);
+        const completionTimer = window.setTimeout(() => {
+          if (isActive) {
+            onComplete?.();
+          }
+        }, 600);
+        timersRef.current.push(completionTimer);
         return;
       }
 
       setCurrentStep(stepIndex);
-      setCompletedSteps((prev) => [...prev, stepIndex]);
+      setCompletedSteps((prev) => (prev.includes(stepIndex) ? prev : [...prev, stepIndex]));
 
       const step = loadingSteps[stepIndex];
       elapsed += step.duration;
       setProgress(Math.round((elapsed / totalDuration) * 100));
 
-      stepIndex++;
-      setTimeout(runStep, step.duration);
+      stepIndex += 1;
+      const nextTimer = window.setTimeout(runStep, step.duration);
+      timersRef.current.push(nextTimer);
     };
 
-    const timer = setTimeout(runStep, 300);
-    return () => clearTimeout(timer);
+    const initialTimer = window.setTimeout(runStep, 300);
+    timersRef.current.push(initialTimer);
+
+    return () => {
+      isActive = false;
+      clearTimers();
+    };
   }, [onComplete]);
 
   const icons = [Search, GitBranch, Activity, Cpu, Shield, Terminal];
@@ -126,7 +153,7 @@ export default function LoadingScreen({ repoUrl, onComplete }) {
             </div>
 
             {/* Progress bar */}
-            <div className="space-y-2">
+            <div className="space-y-2" aria-live="polite">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Analysis Progress</span>
                 <span className="text-cyan-400 font-bold">{progress}%</span>

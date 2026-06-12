@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Cpu,
@@ -13,11 +13,48 @@ import { GithubIcon } from "../components/GithubIcon";
 
 export default function LandingPage({ onAnalyze }) {
   const [repoUrl, setRepoUrl] = useState("");
+  const [validationError, setValidationError] = useState("");
+
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 12 }, () => ({
+        size: Math.random() * 8 + 4,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        driftY: Math.random() * -60 - 20,
+        driftX: Math.random() * 40 - 20,
+        duration: Math.random() * 8 + 6,
+        opacity: Math.random() * 0.5 + 0.1,
+      })),
+    []
+  );
+
+  const validateRepoUrl = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "Please enter a GitHub repository URL.";
+    }
+
+    const githubRepoPattern = /^https?:\/\/github\.com\/[^/]+\/[^/]+\/?$/i;
+    if (!githubRepoPattern.test(trimmed)) {
+      return "Enter a GitHub repository URL like https://github.com/owner/repo.";
+    }
+
+    return "";
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!repoUrl.trim()) return;
-    onAnalyze(repoUrl.trim());
+    const trimmedUrl = repoUrl.trim();
+    const error = validateRepoUrl(trimmedUrl);
+
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+
+    setValidationError("");
+    onAnalyze(trimmedUrl);
   };
 
   return (
@@ -32,23 +69,24 @@ export default function LandingPage({ onAnalyze }) {
 
       {/* Floating Particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(12)].map((_, i) => (
+        {particles.map((particle, index) => (
           <motion.div
-            key={i}
+            key={`${particle.left}-${particle.top}-${index}`}
             className="absolute rounded-full bg-purple-500/10"
             style={{
-              width: Math.random() * 8 + 4,
-              height: Math.random() * 8 + 4,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              width: particle.size,
+              height: particle.size,
+              left: particle.left,
+              top: particle.top,
+              opacity: particle.opacity,
             }}
             animate={{
-              y: [0, Math.random() * -60 - 20],
-              x: [0, Math.random() * 40 - 20],
-              opacity: [0.1, 0.6, 0.1],
+              y: [0, particle.driftY],
+              x: [0, particle.driftX],
+              opacity: [particle.opacity, 0.6, particle.opacity],
             }}
             transition={{
-              duration: Math.random() * 8 + 6,
+              duration: particle.duration,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -146,9 +184,19 @@ export default function LandingPage({ onAnalyze }) {
               <GithubIcon className="w-5 h-5 text-gray-400 shrink-0" />
               <input
                 type="text"
+                id="repo-url"
+                name="repoUrl"
+                aria-label="Repository URL"
+                aria-describedby="repo-url-help"
+                aria-invalid={Boolean(validationError)}
                 placeholder="https://github.com/username/repo"
                 value={repoUrl}
-                onChange={(e) => setRepoUrl(e.target.value)}
+                onChange={(e) => {
+                  setRepoUrl(e.target.value);
+                  if (validationError) {
+                    setValidationError("");
+                  }
+                }}
                 className="w-full bg-transparent text-sm text-white focus:outline-none placeholder:text-gray-500"
               />
             </div>
@@ -163,6 +211,10 @@ export default function LandingPage({ onAnalyze }) {
               <ArrowRight className="w-4 h-4" />
             </motion.button>
           </form>
+          <p id="repo-url-help" className="mt-2 text-left text-xs text-gray-500">
+            {validationError || "Paste a public GitHub repository URL to begin the analysis."}
+          </p>
+          {validationError ? <p className="mt-1 text-left text-sm text-red-400">{validationError}</p> : null}
         </motion.div>
 
         {/* Stats */}

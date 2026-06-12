@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { Terminal, ArrowLeft } from "lucide-react";
 import { GithubIcon } from "../components/GithubIcon";
 import { mockAnalysisResult } from "../data/mockData";
-import {
-  RepositorySummary,
-  TimelineChart,
-  Hotspots,
-  FailurePatterns,
-  BlindSpots,
-  CodeReviewRules,
-  RiskScore,
-} from "../components/dashboard";
+import { LoadingSpinner } from "../components/common";
+import RepositorySummary from "../components/dashboard/RepositorySummary";
+import FailurePatterns from "../components/dashboard/FailurePatterns";
+import BlindSpots from "../components/dashboard/BlindSpots";
+import CodeReviewRules from "../components/dashboard/CodeReviewRules";
+
+const TimelineChart = lazy(() => import("../components/dashboard/TimelineChart"));
+const Hotspots = lazy(() => import("../components/dashboard/Hotspots"));
+const RiskScore = lazy(() => import("../components/dashboard/RiskScore"));
 
 export default function Dashboard({ repoUrl, onBack }) {
   const data = mockAnalysisResult;
@@ -35,6 +35,7 @@ export default function Dashboard({ repoUrl, onBack }) {
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
+              type="button"
               onClick={onBack}
               className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors cursor-pointer"
             >
@@ -68,11 +69,17 @@ export default function Dashboard({ repoUrl, onBack }) {
         <RepositorySummary data={data.repository} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <RiskScore data={data.riskScore} />
-          <TimelineChart data={data.timeline} />
+          <Suspense fallback={<LoadingSpinner label="Loading risk score" />}>
+            <RiskScore data={data.riskScore} />
+          </Suspense>
+          <Suspense fallback={<LoadingSpinner label="Loading timeline" />}>
+            <TimelineChart data={data.timeline} />
+          </Suspense>
         </div>
 
-        <Hotspots hotspots={data.hotspots} />
+        <Suspense fallback={<LoadingSpinner label="Loading hotspots" />}>
+          <Hotspots hotspots={data.hotspots} />
+        </Suspense>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <FailurePatterns
