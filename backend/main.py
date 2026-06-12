@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from models import AnalyzeRequest, AnalyzeResponse, HealthResponse
 import logging
+from github_service import get_repo_data
 
 # Configure logger
 logging.basicConfig(level=logging.INFO)
@@ -46,24 +47,20 @@ async def analyze_repository(request: AnalyzeRequest):
         )
 
     try:
-        dummy_response = {
-            "repository_summary": {
-                "repo_name": "Demo Repo",
-                "total_commits": 100,
-                "contributors": 5,
-                "most_modified_module": "Authentication"
-            },
-            "timeline": [],
-            "hotspots": [],
+        # Retrieve real repository data using GitHub service
+        repo_data = get_repo_data(request.repoUrl)
+
+        # Map repository data to the AnalyzeResponse schema
+        response_data = {
+            "repository_summary": repo_data.get("repository_summary", {}),
+            "timeline": repo_data.get("timeline", []),
+            "hotspots": repo_data.get("file_change_patterns", []),
             "failure_patterns": [],
             "blind_spots": [],
             "code_review_rules": [],
-            "risk_assessment": {
-                "score": 50,
-                "level": "Medium"
-            }
+            "risk_assessment": {"score": 0, "level": "Low"}
         }
-        return dummy_response
+        return response_data
     except Exception as e:
         logger.error(f"Error during repository analysis: {str(e)}")
         raise HTTPException(
