@@ -1,80 +1,79 @@
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
-
-const fadeUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 },
-};
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Card, EmptyState } from "../common";
 
 export default function Hotspots({ hotspots }) {
-  return (
-    <motion.section {...fadeUp} transition={{ delay: 0.15 }} className="mb-8">
-      <div className="glass rounded-2xl p-6 border-white/5">
-        <h2 className="text-lg font-display font-bold mb-6 flex items-center gap-2">
-          <Flame className="w-5 h-5 text-orange-400" />
-          Code Hotspots
-          <span className="text-xs text-gray-500 font-normal ml-2">Most changed, most bug-prone files</span>
-        </h2>
+  const hotspotData = Array.isArray(hotspots) ? hotspots.slice(0, 6) : [];
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-[10px] uppercase tracking-wider text-gray-500 font-mono border-b border-white/5">
-                <th className="text-left py-3 px-3">File Path</th>
-                <th className="text-center py-3 px-3">Changes</th>
-                <th className="text-center py-3 px-3">Bugs</th>
-                <th className="text-center py-3 px-3">Risk</th>
-                <th className="text-right py-3 px-3">Heat</th>
-              </tr>
-            </thead>
-            <tbody>
-              {hotspots.map((file, i) => (
-                <motion.tr
-                  key={i}
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
-                  className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
-                >
-                  <td className="py-3 px-3 font-mono text-xs text-cyan-300 truncate max-w-[300px]">
-                    {file.file}
-                  </td>
-                  <td className="py-3 px-3 text-center text-gray-300">{file.changes}</td>
-                  <td className="py-3 px-3 text-center text-red-400 font-semibold">{file.bugs}</td>
-                  <td className="py-3 px-3 text-center">
-                    <span
-                      className="font-mono font-bold"
-                      style={{
-                        color: file.risk > 80 ? "#ef4444" : file.risk > 60 ? "#f97316" : "#eab308",
-                      }}
-                    >
-                      {file.risk}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <div className="w-20 h-2 bg-white/5 rounded-full overflow-hidden ml-auto">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${file.risk}%`,
-                          background:
-                            file.risk > 80
-                              ? "linear-gradient(to right, #f97316, #ef4444)"
-                              : file.risk > 60
-                              ? "linear-gradient(to right, #eab308, #f97316)"
-                              : "linear-gradient(to right, #22c55e, #eab308)",
-                        }}
-                      />
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+  if (!hotspotData.length) {
+    return (
+      <Card className="mb-8" title="Code Hotspots" subtitle="Files with the highest change velocity and defect concentration" icon={Flame} accent="text-orange-400" delay={0.1}>
+        <EmptyState title="Hotspot data unavailable" description="No hotspot activity metrics were provided for this section." />
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="mb-8" title="Code Hotspots" subtitle="Files with the highest change velocity and defect concentration" icon={Flame} accent="text-orange-400" delay={0.1}>
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={hotspotData} layout="vertical" margin={{ top: 8, right: 14, left: 10, bottom: 8 }}>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" horizontal={false} />
+              <XAxis type="number" hide />
+              <YAxis
+                type="category"
+                dataKey="file"
+                width={130}
+                tick={{ fill: "#94a3b8", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                contentStyle={{
+                  borderRadius: "0.75rem",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(3, 7, 18, 0.92)",
+                  color: "#f8fafc",
+                }}
+              />
+              <Bar dataKey="risk" fill="#22d3ee" radius={[0, 8, 8, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="space-y-3">
+          {hotspotData.map((file, index) => (
+            <motion.div
+              key={`${file.file}-${index}`}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.08 + index * 0.05 }}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-medium text-cyan-300">{file.file}</span>
+                <span className="text-xs text-gray-400">{file.risk}/100</span>
+              </div>
+              <div className="mt-2 h-2 rounded-full bg-white/5">
+                <div
+                  className="h-2 rounded-full"
+                  style={{
+                    width: `${file.risk}%`,
+                    background: file.risk > 80 ? "linear-gradient(90deg, #fb923c, #ef4444)" : file.risk > 60 ? "linear-gradient(90deg, #facc15, #f97316)" : "linear-gradient(90deg, #4ade80, #22d3ee)",
+                  }}
+                />
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
+                <span>{file.changes} changes</span>
+                <span>{file.bugs} bugs</span>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
-    </motion.section>
+    </Card>
   );
 }

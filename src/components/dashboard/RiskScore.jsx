@@ -1,112 +1,75 @@
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
-
-const fadeUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 },
-};
+import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer } from "recharts";
+import { Card, EmptyState } from "../common";
 
 function RiskGauge({ score }) {
-  const angle = (score / 100) * 180 - 90;
-  const getColor = (s) => {
-    if (s <= 30) return "#22c55e";
-    if (s <= 60) return "#eab308";
-    if (s <= 80) return "#f97316";
+  const getColor = (value) => {
+    if (value <= 30) return "#22c55e";
+    if (value <= 60) return "#eab308";
+    if (value <= 80) return "#f97316";
     return "#ef4444";
   };
+
   const color = getColor(score);
+  const data = [{ name: "score", value: score, fill: color }];
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-48 h-24 overflow-hidden">
-        <svg viewBox="0 0 200 100" className="w-full h-full">
-          <defs>
-            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#22c55e" />
-              <stop offset="33%" stopColor="#eab308" />
-              <stop offset="66%" stopColor="#f97316" />
-              <stop offset="100%" stopColor="#ef4444" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M 20 95 A 80 80 0 0 1 180 95"
-            fill="none"
-            stroke="rgba(255,255,255,0.06)"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 20 95 A 80 80 0 0 1 180 95"
-            fill="none"
-            stroke="url(#gaugeGrad)"
-            strokeWidth="12"
-            strokeLinecap="round"
-            strokeDasharray={`${(score / 100) * 251.2} 251.2`}
-          />
-          <line
-            x1="100"
-            y1="95"
-            x2={100 + 60 * Math.cos((angle * Math.PI) / 180)}
-            y2={95 + 60 * Math.sin((angle * Math.PI) / 180)}
-            stroke={color}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          <circle cx="100" cy="95" r="5" fill={color} />
-        </svg>
-      </div>
-      <div className="text-center -mt-2">
-        <span className="text-4xl font-display font-extrabold" style={{ color }}>
+    <div className="relative mx-auto h-56 w-full max-w-[260px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadialBarChart innerRadius="70%" outerRadius="100%" data={data} startAngle={180} endAngle={0}>
+          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+          <RadialBar background clockWise dataKey="value" cornerRadius={999} fill={color} />
+        </RadialBarChart>
+      </ResponsiveContainer>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="text-4xl font-display font-semibold" style={{ color }}>
           {score}
         </span>
-        <span className="text-lg text-gray-500 ml-1">/100</span>
+        <span className="text-sm uppercase tracking-[0.2em] text-gray-500">/100</span>
       </div>
     </div>
   );
 }
 
 export default function RiskScore({ data }) {
+  const riskData = data ?? {};
+
+  if (!riskData.breakdown?.length) {
+    return (
+      <Card title="Risk Score" subtitle="Risk posture against recurring failure patterns" icon={Shield} accent="text-orange-400" delay={0.1}>
+        <EmptyState title="Risk summary unavailable" description="No risk breakdown data was supplied for this card." />
+      </Card>
+    );
+  }
+
   return (
-    <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="glass rounded-2xl p-6 border-white/5">
-      <h2 className="text-lg font-display font-bold mb-6 flex items-center gap-2">
-        <Shield className="w-5 h-5 text-orange-400" />
-        Risk Score
-      </h2>
+    <Card title="Risk Score" subtitle="Risk posture against recurring failure patterns" icon={Shield} accent="text-orange-400" delay={0.1}>
+      <RiskGauge score={riskData.overall ?? 0} />
 
-      <RiskGauge score={data.overall} />
+      <p className="mt-2 text-center text-sm font-semibold text-orange-400">{riskData.label}</p>
 
-      <p className="text-center text-sm text-orange-400 font-semibold mt-2 mb-6">
-        {data.label}
-      </p>
-
-      <div className="space-y-3">
-        {data.breakdown.map((item, i) => (
-          <div key={i} className="space-y-1">
+      <div className="mt-6 space-y-3">
+        {riskData.breakdown.map((item, index) => (
+          <div key={`${item.category}-${index}`} className="space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-gray-400">{item.category}</span>
               <span className="font-mono text-white">{item.score}</span>
             </div>
-            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
               <motion.div
                 initial={{ width: 0 }}
-                whileInView={{ width: `${item.score}%` }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
+                animate={{ width: `${item.score}%` }}
+                transition={{ delay: 0.18 + index * 0.06, duration: 0.45 }}
                 className="h-full rounded-full"
                 style={{
-                  background:
-                    item.score > 75
-                      ? "linear-gradient(to right, #f97316, #ef4444)"
-                      : item.score > 50
-                      ? "linear-gradient(to right, #eab308, #f97316)"
-                      : "linear-gradient(to right, #22c55e, #eab308)",
+                  background: item.score > 75 ? "linear-gradient(90deg, #f97316, #ef4444)" : item.score > 50 ? "linear-gradient(90deg, #eab308, #f97316)" : "linear-gradient(90deg, #22c55e, #eab308)",
                 }}
               />
             </div>
           </div>
         ))}
       </div>
-    </motion.div>
+    </Card>
   );
 }
