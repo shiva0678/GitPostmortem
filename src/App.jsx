@@ -5,7 +5,6 @@ import LoadingScreen from "./pages/LoadingScreen";
 import Dashboard from "./pages/Dashboard";
 
 function App() {
-  // "landing" | "loading" | "dashboard"
   const [view, setView] = useState("landing");
   const [repoUrl, setRepoUrl] = useState("");
 

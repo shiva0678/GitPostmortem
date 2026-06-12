@@ -89,25 +89,30 @@ export default function LoadingScreen({ repoUrl, onComplete }) {
 
             {/* Log lines */}
             <div className="space-y-2 mb-8 max-h-[200px] overflow-y-auto">
-              {completedSteps.map((stepIdx) => (
-                <motion.div
-                  key={stepIdx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex items-start gap-2"
-                >
-                  <span className="text-green-400 shrink-0 mt-0.5">✓</span>
-                  <span
-                    className={
-                      stepIdx === currentStep
-                        ? "text-cyan-300"
-                        : "text-gray-500"
-                    }
+              {completedSteps.map((stepIdx) => {
+                const step = loadingSteps[stepIdx];
+                if (!step) return null;
+
+                return (
+                  <motion.div
+                    key={stepIdx}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-start gap-2"
                   >
-                    {loadingSteps[stepIdx].text}
-                  </span>
-                </motion.div>
-              ))}
+                    <span className="text-green-400 shrink-0 mt-0.5">✓</span>
+                    <span
+                      className={
+                        stepIdx === currentStep
+                          ? "text-cyan-300"
+                          : "text-gray-500"
+                      }
+                    >
+                      {step.text}
+                    </span>
+                  </motion.div>
+                );
+              })}
               {currentStep < loadingSteps.length - 1 && (
                 <motion.div
                   animate={{ opacity: [0.3, 1, 0.3] }}
