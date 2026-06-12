@@ -1,16 +1,19 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Dict, Any, List
-from backend.analyzer import analyze_repository
+from models import AnalyzeRequest, AnalyzeResponse, HealthResponse
+import logging
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("GitPostmortemBackend")
 
 app = FastAPI(
-    title="GitPostmortem API",
-    description="API for analyzing Git repository health, failure patterns, and risk using Gemini.",
+    title="GitPostmortem Backend API",
+    description="Backend API for GitPostmortem codebase analysis",
     version="1.0.0"
 )
 
-# Enable CORS for frontend integration
+# CORS Middleware setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,40 +22,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Flexible input schema to avoid strict type validation issues with raw backend payloads
-class AnalysisRequest(BaseModel):
-    repository_summary: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="General repository statistics (e.g. name, total commits, contributors)"
-    )
-    commit_history: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="List of commits containing hash, author, date, message, and changed files"
-    )
-    contributors: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="List of contributor profiles and contribution metrics"
-    )
-    file_change_patterns: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="Frequencies of changes per file"
-    )
-
-@app.get("/")
-def read_root():
-    return {"status": "ok", "service": "GitPostmortem API"}
-
-@app.post("/analyze")
-async def analyze_repo(payload: AnalysisRequest):
+@app.get("/health", response_model=HealthResponse, status_code=status.HTTP_200_OK)
+async def health_check():
     """
-    Analyzes the Git repository data and returns hotspots, failure patterns,
-    blind spots, code review recommendations, and risk assessment.
+    Service health check endpoint.
     """
+    logger.info("Health check endpoint called")
+    return {"status": "healthy"}
+
+@app.post("/api/analyze", response_model=AnalyzeResponse, status_code=status.HTTP_200_OK)
+async def analyze_repository(request: AnalyzeRequest):
+    """
+    Endpoint to trigger repository analysis. Currently returns a dummy response matching the requested schema.
+    """
+    logger.info(f"Analyze endpoint called with repo URL: {request.repoUrl}")
+    
+    # Check if a valid repository URL was provided (basic validation)
+    if not request.repoUrl or not request.repoUrl.strip():
+        logger.warning("Analyze endpoint failed: repoUrl was empty")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="repoUrl must be a non-empty string"
+        )
+
     try:
-        data = payload.model_dump()
-        result = analyze_repository(data)
-        return result
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
+        dummy_response = {
+            "repository_summary": {
+                "repo_name": "Demo Repo",
+                "total_commits": 100,
+                "contributors": 5,
+                "most_modified_module": "Authentication"
+            },
+            "timeline": [],
+            "hotspots": [],
+            "failure_patterns": [],
+            "blind_spots": [],
+            "code_review_rules": [],
+            "risk_assessment": {
+                "score": 50,
+                "level": "Medium"
+            }
+        }
+        return dummy_response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error during repository analysis: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An internal error occurred during analysis: {str(e)}"
+        )
