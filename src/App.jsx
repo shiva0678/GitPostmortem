@@ -7,19 +7,34 @@ import Dashboard from "./pages/Dashboard";
 function App() {
   const [view, setView] = useState("landing");
   const [repoUrl, setRepoUrl] = useState("");
+  const [analysisData, setAnalysisData] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleAnalyze = useCallback((url) => {
     setRepoUrl(url);
+    setAnalysisData(null);
+    setErrorMessage("");
     setView("loading");
   }, []);
 
-  const handleLoadingComplete = useCallback(() => {
+  const handleLoadingComplete = useCallback((result) => {
+    if (result?.error) {
+      setAnalysisData(null);
+      setErrorMessage(result.error);
+      setView("dashboard");
+      return;
+    }
+
+    setAnalysisData(result?.data ?? null);
+    setErrorMessage("");
     setView("dashboard");
   }, []);
 
   const handleBack = useCallback(() => {
     setView("landing");
     setRepoUrl("");
+    setAnalysisData(null);
+    setErrorMessage("");
   }, []);
 
   return (
@@ -44,7 +59,11 @@ function App() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <LoadingScreen repoUrl={repoUrl} onComplete={handleLoadingComplete} />
+          <LoadingScreen
+            repoUrl={repoUrl}
+            onComplete={handleLoadingComplete}
+            onBack={handleBack}
+          />
         </motion.div>
       )}
 
@@ -56,7 +75,12 @@ function App() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Dashboard repoUrl={repoUrl} onBack={handleBack} />
+          <Dashboard
+            repoUrl={repoUrl}
+            analysisData={analysisData}
+            errorMessage={errorMessage}
+            onBack={handleBack}
+          />
         </motion.div>
       )}
     </AnimatePresence>

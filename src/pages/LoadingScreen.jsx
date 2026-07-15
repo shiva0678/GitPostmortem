@@ -1,9 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Terminal, Activity, GitBranch, Search, Shield, Cpu } from "lucide-react";
+import {
+  Terminal,
+  Activity,
+  GitBranch,
+  Search,
+  Shield,
+  Cpu,
+} from "lucide-react";
 import { loadingSteps } from "../data/mockData";
+import { analyzeRepository } from "../services/api";
 
-export default function LoadingScreen({ repoUrl, onComplete }) {
+// API communication is handled by src/services/api.js
+
+export default function LoadingScreen({ repoUrl, onComplete, onBack }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [progress, setProgress] = useState(0);
@@ -15,52 +25,84 @@ export default function LoadingScreen({ repoUrl, onComplete }) {
       timersRef.current = [];
     };
 
-    if (!loadingSteps.length) {
-      setProgress(100);
-      const completionTimer = window.setTimeout(() => onComplete?.(), 600);
-      timersRef.current.push(completionTimer);
-      return clearTimers;
-    }
-
-    let stepIndex = 0;
-    const totalDuration = loadingSteps.reduce((total, step) => total + step.duration, 0);
-    let elapsed = 0;
+    const controller = new AbortController();
     let isActive = true;
 
-    const runStep = () => {
+    const finalize = (payload) => {
       if (!isActive) return;
+      setProgress(100);
+      const completionTimer = window.setTimeout(() => {
+        if (isActive) {
+          onComplete?.(payload);
+        }
+      }, 600);
+      timersRef.current.push(completionTimer);
+    };
 
-      if (stepIndex >= loadingSteps.length) {
-        setProgress(100);
-        const completionTimer = window.setTimeout(() => {
-          if (isActive) {
-            onComplete?.();
-          }
-        }, 600);
-        timersRef.current.push(completionTimer);
+    const runAnalysis = async () => {
+      if (!repoUrl?.trim()) {
+        finalize({ error: "Please enter a repository URL to begin analysis." });
         return;
       }
 
-      setCurrentStep(stepIndex);
-      setCompletedSteps((prev) => (prev.includes(stepIndex) ? prev : [...prev, stepIndex]));
+      if (!loadingSteps.length) {
+        finalize({ error: "No loading steps were configured." });
+        return;
+      }
 
-      const step = loadingSteps[stepIndex];
-      elapsed += step.duration;
-      setProgress(Math.round((elapsed / totalDuration) * 100));
+      let stepIndex = 0;
+      const totalDuration = loadingSteps.reduce(
+        (total, step) => total + step.duration,
+        0,
+      );
+      let elapsed = 0;
 
-      stepIndex += 1;
-      const nextTimer = window.setTimeout(runStep, step.duration);
-      timersRef.current.push(nextTimer);
+      const runStep = () => {
+        if (!isActive) return;
+
+        if (stepIndex >= loadingSteps.length) {
+          finalize({ error: "The analysis could not be completed." });
+          return;
+        }
+
+        setCurrentStep(stepIndex);
+        setCompletedSteps((prev) =>
+          prev.includes(stepIndex) ? prev : [...prev, stepIndex],
+        );
+
+        const step = loadingSteps[stepIndex];
+        elapsed += step.duration;
+        setProgress(Math.round((elapsed / totalDuration) * 100));
+
+        stepIndex += 1;
+        const nextTimer = window.setTimeout(runStep, step.duration);
+        timersRef.current.push(nextTimer);
+      };
+
+      const initialTimer = window.setTimeout(runStep, 300);
+      timersRef.current.push(initialTimer);
+
+      try {
+        const result = await analyzeRepository(repoUrl, {
+          signal: controller.signal,
+        });
+        finalize(result);
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+        finalize({ error: error.message || "The analysis request failed." });
+      }
     };
 
-    const initialTimer = window.setTimeout(runStep, 300);
-    timersRef.current.push(initialTimer);
+    runAnalysis();
 
     return () => {
       isActive = false;
+      controller.abort();
       clearTimers();
     };
-  }, [onComplete]);
+  }, [onComplete, repoUrl]);
 
   const icons = [Search, GitBranch, Activity, Cpu, Shield, Terminal];
 
@@ -89,9 +131,20 @@ export default function LoadingScreen({ repoUrl, onComplete }) {
                 git-postmortem --analyze {repoUrl}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-cyan-400 font-mono">
-              <Activity className="w-3 h-3 animate-pulse" />
-              Live
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-xs text-cyan-400 font-mono">
+                <Activity className="w-3 h-3 animate-pulse" />
+                Live
+              </div>
+              {onBack ? (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="text-xs text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -109,7 +162,9 @@ export default function LoadingScreen({ repoUrl, onComplete }) {
                   transition={{ duration: 0.5 }}
                   className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center"
                 >
-                  <Icon className={`w-5 h-5 ${completedSteps.length > i * 2 ? "text-cyan-400" : "text-gray-600"}`} />
+                  <Icon
+                    className={`w-5 h-5 ${completedSteps.length > i * 2 ? "text-cyan-400" : "text-gray-600"}`}
+                  />
                 </motion.div>
               ))}
             </div>
@@ -178,7 +233,8 @@ export default function LoadingScreen({ repoUrl, onComplete }) {
           className="mt-6 text-center"
         >
           <p className="text-gray-500 text-sm">
-            Analyzing repository: <span className="text-purple-400">{repoUrl}</span>
+            Analyzing repository:{" "}
+            <span className="text-purple-400">{repoUrl}</span>
           </p>
           <p className="text-gray-600 text-xs mt-1">
             This may take a moment for large repositories

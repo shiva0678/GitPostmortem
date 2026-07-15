@@ -24,12 +24,18 @@ GITHUB_API_URL = "https://api.github.com"
 
 
 def _auth_headers() -> Dict[str, str]:
-    """Return authentication headers if a GitHub token is set."""
+    """Return authentication headers for GitHub API requests."""
+    headers = {
+        "User-Agent": "GitPostmortem/1.0 (+https://github.com/your-org/GitPostmortem)",
+        "Accept": "application/vnd.github+json",
+    }
+
     token = os.getenv("GITHUB_TOKEN")
-    auth = {"Authorization": f"token {token}"} if token else {}
-    # Log authentication usage
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
     logger.info(f"GitHub request authenticated: {bool(token)}")
-    return auth
+    return headers
 
 # New helper to print current rate limit status
 def print_rate_limit_status():
@@ -82,7 +88,7 @@ def _request_with_rate_handling(url: str, params: Dict[str, Any] = None) -> requ
     attempts = 0
     while attempts < 3:
         try:
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=20)
             # Log remaining rate limit if present
             remaining = response.headers.get("X-RateLimit-Remaining")
             if remaining is not None:
@@ -248,19 +254,8 @@ def get_repo_data(repo_url: str) -> Dict[str, Any]:
         contributors = get_contributors(owner, repo)
     except Exception as e:
         logger.error(f"Failed to fetch GitHub data: {e}")
-        # Minimal fallback response
-        return {
-            "repository_summary": {
-                "repo_name": repo,
-                "total_commits": 0,
-                "contributors": 0,
-                "most_modified_module": "",
-            },
-            "commit_history": [],
-            "contributors": [],
-            "file_change_patterns": [],
-            "timeline": [],
-        }
+        commits = []
+        contributors = []
 
     file_change_patterns = _aggregate_file_changes(commits)
     most_modified_module = file_change_patterns[0]["file"] if file_change_patterns else ""

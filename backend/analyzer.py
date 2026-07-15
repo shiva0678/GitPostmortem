@@ -168,7 +168,7 @@ def _call_gemini(prompt: str, api_key: str) -> str:
 
 
 def analyze_repository(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Call the Gemini API for repository analysis with a meaningful fallback."""
+    """Create repository analysis from available data and only use Gemini when it is available."""
     if not isinstance(data, dict):
         logger.warning("Fallback analysis used: invalid repository payload")
         return _build_fallback_analysis({})
@@ -196,8 +196,12 @@ def analyze_repository(data: Dict[str, Any]) -> Dict[str, Any]:
             cleaned_text = cleaned_text[7:]
         if cleaned_text.endswith("```"):
             cleaned_text = cleaned_text[:-3]
+
         parsed = json.loads(cleaned_text)
         return _normalize_analysis(parsed)
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        logger.warning("Fallback analysis used: invalid Gemini response: %s", exc)
+        return _build_fallback_analysis(data)
     except Exception as exc:
         logger.warning("Fallback analysis used: %s", exc)
         return _build_fallback_analysis(data)

@@ -26,7 +26,7 @@ export default function LandingPage({ onAnalyze }) {
         duration: Math.random() * 8 + 6,
         opacity: Math.random() * 0.5 + 0.1,
       })),
-    []
+    [],
   );
 
   const validateRepoUrl = (value) => {
@@ -116,8 +116,18 @@ export default function LandingPage({ onAnalyze }) {
           animate={{ opacity: 1, x: 0 }}
           className="hidden md:flex items-center gap-6"
         >
-          <a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Features</a>
-          <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">How It Works</a>
+          <a
+            href="#features"
+            className="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+          >
+            Features
+          </a>
+          <a
+            href="#how-it-works"
+            className="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+          >
+            How It Works
+          </a>
           <a
             href="https://github.com"
             target="_blank"
@@ -164,8 +174,8 @@ export default function LandingPage({ onAnalyze }) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="max-w-2xl mx-auto text-gray-400 text-lg md:text-xl leading-relaxed mb-12"
         >
-          AI-powered repository intelligence that learns from engineering failures
-          and prevents recurring bugs.
+          AI-powered repository intelligence that learns from engineering
+          failures and prevents recurring bugs.
         </motion.p>
 
         {/* Input Section */}
@@ -211,18 +221,38 @@ export default function LandingPage({ onAnalyze }) {
               <ArrowRight className="w-4 h-4" />
             </motion.button>
           </form>
-          <p id="repo-url-help" className="mt-2 text-left text-xs text-gray-500">
-            {validationError || "Paste a public GitHub repository URL to begin the analysis."}
+          <p
+            id="repo-url-help"
+            className="mt-2 text-left text-xs text-gray-500"
+          >
+            {validationError ||
+              "Paste a public GitHub repository URL to begin the analysis."}
           </p>
-          {validationError ? <p className="mt-1 text-left text-sm text-red-400">{validationError}</p> : null}
+          {validationError ? (
+            <p className="mt-1 text-left text-sm text-red-400">
+              {validationError}
+            </p>
+          ) : null}
         </motion.div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
           {[
-            { label: "Repositories Analyzed", value: "14,820+", desc: "Public & private repos mapped" },
-            { label: "Bugs Prevented", value: "98.4%", desc: "Of recurring bug patterns stopped" },
-            { label: "Insights Generated", value: "1.2M+", desc: "Actionable failure preventions" },
+            {
+              label: "Repositories Analyzed",
+              value: "14,820+",
+              desc: "Public & private repos mapped",
+            },
+            {
+              label: "Bugs Prevented",
+              value: "98.4%",
+              desc: "Of recurring bug patterns stopped",
+            },
+            {
+              label: "Insights Generated",
+              value: "1.2M+",
+              desc: "Actionable failure preventions",
+            },
           ].map((stat, i) => (
             <motion.div
               key={i}
@@ -235,7 +265,9 @@ export default function LandingPage({ onAnalyze }) {
               <div className="text-3xl md:text-4xl font-display font-extrabold text-gradient-purple-blue mb-1">
                 {stat.value}
               </div>
-              <div className="text-sm font-semibold text-white mb-0.5">{stat.label}</div>
+              <div className="text-sm font-semibold text-white mb-0.5">
+                {stat.label}
+              </div>
               <div className="text-xs text-gray-500">{stat.desc}</div>
             </motion.div>
           ))}
@@ -243,13 +275,17 @@ export default function LandingPage({ onAnalyze }) {
       </main>
 
       {/* Features Section */}
-      <section id="features" className="relative z-40 max-w-6xl mx-auto px-6 py-20 border-t border-white/5">
+      <section
+        id="features"
+        className="relative z-40 max-w-6xl mx-auto px-6 py-20 border-t border-white/5"
+      >
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
             AI-Driven Postmortem Safeguards
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto text-sm md:text-base">
-            GitPostmortem connects to your GitHub repository and analyzes logs, issue history, and commit diffs to protect your main branch.
+            GitPostmortem connects to your GitHub repository and analyzes logs,
+            issue history, and commit diffs to protect your main branch.
           </p>
         </div>
 
@@ -288,14 +324,20 @@ export default function LandingPage({ onAnalyze }) {
               transition={{ delay: i * 0.05, duration: 0.5 }}
               className="p-8 rounded-2xl glass glass-card-hover text-left flex gap-5"
             >
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-tr ${feature.accent} p-[1px] shrink-0`}>
+              <div
+                className={`w-12 h-12 rounded-xl bg-gradient-to-tr ${feature.accent} p-[1px] shrink-0`}
+              >
                 <div className="w-full h-full bg-[#07051a] rounded-[11px] flex items-center justify-center">
                   <feature.icon className="w-5 h-5 text-white" />
                 </div>
               </div>
               <div>
-                <h3 className="font-display font-semibold text-lg text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{feature.desc}</p>
+                <h3 className="font-display font-semibold text-lg text-white mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  {feature.desc}
+                </p>
               </div>
             </motion.div>
           ))}
@@ -303,9 +345,14 @@ export default function LandingPage({ onAnalyze }) {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="relative z-40 max-w-6xl mx-auto px-6 py-20 border-t border-white/5">
+      <section
+        id="how-it-works"
+        className="relative z-40 max-w-6xl mx-auto px-6 py-20 border-t border-white/5"
+      >
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">How It Works</h2>
+          <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+            How It Works
+          </h2>
           <p className="text-gray-400 max-w-xl mx-auto text-sm">
             Integrates instantly into your workflow — zero configuration.
           </p>
@@ -353,7 +400,9 @@ export default function LandingPage({ onAnalyze }) {
                 <div className="h-28 bg-black/40 rounded-xl border border-white/5 flex items-center justify-center p-4">
                   <div className="p-3 bg-red-950/20 border border-red-500/20 rounded-lg flex items-center gap-2">
                     <ShieldAlert className="w-4 h-4 text-red-400" />
-                    <span className="text-[9px] font-mono text-gray-300">Regression detected!</span>
+                    <span className="text-[9px] font-mono text-gray-300">
+                      Regression detected!
+                    </span>
                   </div>
                 </div>
               ),
@@ -371,8 +420,12 @@ export default function LandingPage({ onAnalyze }) {
               <span className="font-mono text-xs font-semibold text-cyan-400 uppercase tracking-widest block mb-1">
                 {item.step}
               </span>
-              <h3 className="font-display font-semibold text-lg text-white mb-2">{item.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+              <h3 className="font-display font-semibold text-lg text-white mb-2">
+                {item.title}
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                {item.desc}
+              </p>
             </motion.div>
           ))}
         </div>
@@ -409,18 +462,34 @@ export default function LandingPage({ onAnalyze }) {
               <Terminal className="w-4 h-4 text-cyan-400" />
             </div>
           </div>
-          <span className="font-display font-bold text-white text-base tracking-tight">GitPostmortem</span>
+          <span className="font-display font-bold text-white text-base tracking-tight">
+            GitPostmortem
+          </span>
         </div>
 
         <div className="flex items-center gap-6">
-          <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white transition-colors flex items-center gap-1"
+          >
             <GithubIcon className="w-4 h-4" /> GitHub
           </a>
-          <a href="#" className="hover:text-white transition-colors">About</a>
-          <a href="mailto:support@gitpostmortem.dev" className="hover:text-white transition-colors">Contact</a>
+          <a href="#" className="hover:text-white transition-colors">
+            About
+          </a>
+          <a
+            href="mailto:support@gitpostmortem.dev"
+            className="hover:text-white transition-colors"
+          >
+            Contact
+          </a>
         </div>
 
-        <div>© {new Date().getFullYear()} GitPostmortem. All rights reserved.</div>
+        <div>
+          © {new Date().getFullYear()} GitPostmortem. All rights reserved.
+        </div>
       </footer>
     </div>
   );

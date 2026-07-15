@@ -1,21 +1,32 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import { Terminal, ArrowLeft } from "lucide-react";
 import { GithubIcon } from "../components/GithubIcon";
-import { mockAnalysisResult } from "../data/mockData";
-import { LoadingSpinner } from "../components/common";
+import { ErrorState, LoadingSpinner } from "../components/common";
+import { buildDashboardData } from "../utils/normalizeAnalysisData";
 import RepositorySummary from "../components/dashboard/RepositorySummary";
 import FailurePatterns from "../components/dashboard/FailurePatterns";
 import BlindSpots from "../components/dashboard/BlindSpots";
 import CodeReviewRules from "../components/dashboard/CodeReviewRules";
 
-const TimelineChart = lazy(() => import("../components/dashboard/TimelineChart"));
+const TimelineChart = lazy(() =>
+  import("../components/dashboard/TimelineChart"),
+);
 const Hotspots = lazy(() => import("../components/dashboard/Hotspots"));
 const RiskScore = lazy(() => import("../components/dashboard/RiskScore"));
 
-export default function Dashboard({ repoUrl, onBack }) {
-  const data = mockAnalysisResult;
+export default function Dashboard({
+  repoUrl,
+  analysisData,
+  errorMessage,
+  onBack,
+}) {
   const [expandedPattern, setExpandedPattern] = useState(null);
   const [expandedRec, setExpandedRec] = useState(null);
+
+  const data = useMemo(
+    () => buildDashboardData(analysisData, repoUrl),
+    [analysisData, repoUrl],
+  );
 
   const handleTogglePattern = (id) => {
     setExpandedPattern((prev) => (prev === id ? null : id));
@@ -49,7 +60,9 @@ export default function Dashboard({ repoUrl, onBack }) {
                   <Terminal className="w-4 h-4 text-cyan-400" />
                 </div>
               </div>
-              <span className="font-display font-bold text-sm tracking-tight">GitPostmortem</span>
+              <span className="font-display font-bold text-sm tracking-tight">
+                GitPostmortem
+              </span>
             </div>
           </div>
 
@@ -66,6 +79,22 @@ export default function Dashboard({ repoUrl, onBack }) {
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+        {errorMessage ? (
+          <div className="mb-8 rounded-3xl border border-red-500/20 bg-red-500/10 p-6">
+            <ErrorState
+              title="Analysis could not be completed"
+              description={errorMessage}
+            />
+          </div>
+        ) : null}
+
+        {data.metadata?.usedFallback ? (
+          <div className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            <span className="font-semibold">Fallback analysis active:</span>{" "}
+            {data.metadata.fallbackReason}
+          </div>
+        ) : null}
+
         <RepositorySummary data={data.repository} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -103,9 +132,13 @@ export default function Dashboard({ repoUrl, onBack }) {
                 <Terminal className="w-3.5 h-3.5 text-cyan-400" />
               </div>
             </div>
-            <span className="font-display font-bold text-white text-sm">GitPostmortem</span>
+            <span className="font-display font-bold text-white text-sm">
+              GitPostmortem
+            </span>
           </div>
-          <span className="text-xs">© {new Date().getFullYear()} GitPostmortem. All rights reserved.</span>
+          <span className="text-xs">
+            © {new Date().getFullYear()} GitPostmortem. All rights reserved.
+          </span>
         </footer>
       </main>
     </div>
